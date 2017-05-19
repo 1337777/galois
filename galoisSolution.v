@@ -513,6 +513,18 @@ of View1 *)
           <~~ (w o>Topos_transf) o>Topos [[ v_ @ func'1 ]]
 
   (* for sense only, non-necessary for reduction *)
+  | PolyMetaTransf_PolyMetaFunctor :
+      forall (func0 : obIndexer -> Type)
+        (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
+      forall (func'0 : obIndexer -> Type)
+        (func'1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func'0 A' -> func'0 A)
+        (transf : forall A : obIndexer, func0 A -> func'0 A),
+      forall (A : obIndexer) (x : func0 A),
+        ( PolyMetaFunctor func'1 (transf A x) )
+          ~~~ ( (PolyMetaFunctor func1 x o>Topos_transf)
+                : 'Topos(0 View0 A ~> MetaFunctor func'1 )0 )
+
+  (* for sense only, non-necessary for reduction *)
   | CoLimitator_PolyMetaFunctor :
       forall (func0 : obIndexer -> Type)
         (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
