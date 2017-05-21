@@ -296,6 +296,18 @@ of View1 *)
         ~~~ (w o>Topos_transf) o>Topos [[ v_ @ func'1 ]]
 
 (* for sense only, non-necessary for reduction *)
+| PolyMetaTransf_PolyMetaFunctor :
+    forall (func0 : obIndexer -> Type)
+      (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
+    forall (func'0 : obIndexer -> Type)
+      (func'1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func'0 A' -> func'0 A)
+      (transf : forall A : obIndexer, func0 A -> func'0 A),
+    forall (A : obIndexer) (x : func0 A),
+      ( PolyMetaFunctor func'1 (transf A x) )
+        ~~~ ( (PolyMetaFunctor func1 x o>Topos_transf)
+              : 'Topos(0 View0 A ~> MetaFunctor func'1 )0 )
+
+(* for sense only, non-necessary for reduction *)
 | CoLimitator_PolyMetaFunctor :
     forall (func0 : obIndexer -> Type)
       (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
@@ -354,6 +366,78 @@ Axiom mymax_monotone : forall (obIndexer : Type) (func0 : obIndexer -> Type),
     forall (w_ v_ : forall (A : obIndexer), func0 A -> nat),
       (forall A x, ( w_ A x <= v_ A x )%coq_nat) -> ( mymax w_ <= mymax v_ )%coq_nat.
 
+
+Fixpoint grade (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0) {struct f} : nat
+with gradeMaxCom (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0) {struct f} : nat
+with gradeTotal (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0) {struct f} : nat.
+Proof.
+  case : F1 F2 / f.
+  - intros F.
+    exact (S O). (* UnitTopos *)
+  - intros F2 F1 f_ F1' f'.
+    refine ((S  (S (grade _ _ f_ + grade _ _ f')%coq_nat)) (* +
+            (S  (S (gradeMaxCom _ _ f_ + (gradeMaxCom _ _ f' (* + (S (S (grade _ _ f_ + grade _ _ f')%coq_nat)) *))%coq_nat)%coq_nat)) *))%coq_nat. (* PolyTopos *)
+  - intros A A' a.
+    exact (S (S O)). (* View1 *)
+  - intros func0 func1 A x.
+    exact (S (S O)). (* PolyMetaFunctor *)
+  - intros func0 func1 func'0 func'1 transf A f.
+    refine ((S (S (grade _ _ f))) (* + (gradeMaxCom _ _ f) *))%coq_nat. (* PolyMetaTransf *)
+  - intros func0 func1 F f_.
+    refine (S (S (mymax (fun A x => (  grade _ _ (f_ A x) (* +  gradeMaxCom _ _ (f_ A x) *) )%coq_nat)))). (* CoLimitator *)
+Proof.
+  case : F1 F2 / f.
+  - intros F.
+    exact (O). (* UnitTopos *)
+  - intros F2 F1 f_ F1' f'.
+    refine (  ( (gradeMaxCom _ _ f_ + (gradeMaxCom _ _ f' + (S (S (grade _ _ f_ + grade _ _ f')%coq_nat)))%coq_nat)%coq_nat)). (* PolyTopos *)
+  - intros A A' a.
+    exact (O). (* View1 *)
+  - intros func0 func1 A x.
+    exact (O). (* PolyMetaFunctor *)
+  - intros func0 func1 func'0 func'1 transf A f.
+    refine (gradeMaxCom _ _ f). (* PolyMetaTransf *)
+  - intros func0 func1 F f_.
+    refine ( ( (mymax (fun A x => ( (* grade _ _ (f_ A x) + *) gradeMaxCom _ _ (f_ A x))%coq_nat)))). (* CoLimitator *)
+Proof.
+  case : F1 F2 / f.
+  - intros F.
+    exact ((S O))%coq_nat. (* UnitTopos *)
+  - intros F2 F1 f_ F1' f'.
+    refine ((S  (S (gradeTotal _ _ f_ + gradeTotal _ _ f')%coq_nat)) +
+            (  ( ((*gradeMaxCom _ _ f_ +*) ((*gradeMaxCom _ _ f' + *) (S (S (grade _ _ f_ + grade _ _ f')%coq_nat)) )%coq_nat)%coq_nat)) )%coq_nat. (* PolyTopos *)
+  - intros A A' a.
+    exact (S (S O)). (* View1 *)
+  - intros func0 func1 A x.
+    exact (S (S O)). (* PolyMetaFunctor *)
+  - intros func0 func1 func'0 func'1 transf A f.
+    refine ((S (S (gradeTotal _ _ f)))  (* + (gradeMaxCom _ _ f)*) )%coq_nat. (* PolyMetaTransf *)
+  - intros func0 func1 F f_.
+    refine (S (S (mymax (fun A x => (  gradeTotal _ _ (f_ A x) )%coq_nat)))). (* CoLimitator *)
+Defined.
+
+(*
+  case : F1 F2 / f.
+  - intros F.
+    exact ((S O) +
+           (O))%coq_nat. (* UnitTopos *)
+  - intros F2 F1 f_ F1' f'.
+    refine ((S  (S (grade _ _ f_ + grade _ _ f')%coq_nat)) +
+            ( ( (gradeMaxCom _ _ f_ + (gradeMaxCom _ _ f' + (S (S (grade _ _ f_ + grade _ _ f')%coq_nat)))%coq_nat)%coq_nat)) )%coq_nat. (* PolyTopos *)
+  - intros A A' a.
+    exact ((S (S O)) +
+           (O) )%coq_nat. (* View1 *)
+  - intros func0 func1 A x.
+    exact ((S (S O)) +
+           (O))%coq_nat. (* PolyMetaFunctor *)
+  - intros func0 func1 func'0 func'1 transf A f.
+    refine ((S (S (grade _ _ f))) +
+            (gradeMaxCom _ _ f))%coq_nat. (* PolyMetaTransf *)
+  - intros func0 func1 F f_.
+    refine (S (S (mymax (fun A x => (*gradeTotal _ _ (f_ A x) *)  (grade _ _ (f_ A x) + gradeMaxCom _ _ (f_ A x))%coq_nat  )))). (* CoLimitator *) *)
+
+
+(*
 Definition grade :
   forall (F1 F2 : obTopos), 'Topos(0 F1 ~> F2 )0 -> nat.
 Proof.
@@ -373,8 +457,8 @@ Definition gradeMaxCom :
 Proof.
   move => F1 F2 f; elim : F1 F2 / f.
   - intros; exact (O). (* UnitTopos *)
-  - move => ? ? v_ grade_v_ ? f' grade_f';
-             refine ((grade_v_ + (grade_f' + grade (v_ o>Topos f'))%coq_nat)%coq_nat ). (* PolyTopos *)
+  - move => ? ? f_ grade_f_ ? f' grade_f';
+             refine ((grade_f_ + (grade_f' + grade (f_ o>Topos f'))%coq_nat)%coq_nat ). (* PolyTopos *)
   - intros; exact (O). (* View1 *)
   - intros; exact (O). (* PolyMetaFunctor *)
   - intros; assumption. (* PolyMetaTransf *)
@@ -382,12 +466,41 @@ Proof.
     refine (mymax grades_v_A_x). (* CoLimitator *)
 Defined.
 
-Definition gradeTotal (F1 F2 : obTopos) :
-  'Topos(0 F1 ~> F2 )0 -> nat.
+Definition gradeTotal : 
+  forall (F1 F2 : obTopos), 'Topos(0 F1 ~> F2 )0 -> nat.
 Proof.
-  move => f; refine ( (grade f) + (gradeMaxCom f) )%coq_nat.
+  move => F1 F2 f; elim : F1 F2 / f.
+  - intros F; exact ((grade (@UnitTopos F) + (O))%coq_nat). (* UnitTopos *)
+  - move => F2 F1 f_ grade_f_ F1' f' grade_f';
+             refine (grade (f_ o>Topos f') + (S (grade_f_ + (grade_f' + grade (f_ o>Topos f'))%coq_nat)%coq_nat ))%coq_nat. (* PolyTopos *)
+  - intros A A' a; exact (grade (View1 a) + (O))%coq_nat. (* View1 *)
+  - intros func0 func1 A x; exact (grade (PolyMetaFunctor func1 x) + (O))%coq_nat. (* PolyMetaFunctor *)
+  - intros func0 func1 func'0 func'1 transf A f gradeMaxCom_f;
+      exact (grade (PolyMetaTransf func'1 transf f) + gradeMaxCom_f)%coq_nat. (* PolyMetaTransf *)
+  - intros func0 func1 F v_ grades_v_A_x.
+    refine (mymax (fun A x => (grade (v_ A x) + grades_v_A_x A x)%coq_nat)). (* CoLimitator *)
 Defined.
+ *)
 
+(*
+Definition gradeTotal : forall (F1 F2 : obTopos), 'Topos(0 F1 ~> F2 )0 -> nat.
+Proof.
+  move => F1 F2 f; elim : F1 F2 / f. Show Proof.
+  - intros F; refine (grade (@UnitTopos F) + (gradeMaxCom (@UnitTopos F)))%coq_nat. (* UnitTopos *)
+  - intros F2 F1 f_ F1' f'. refine (grade (f_ o>Topos f') + (gradeMaxCom (f_ o>Topos f')))%coq_nat.
+    
+  - move => ? ? v_ grade_v_ ? f' grade_f';
+             refine ((grade_v_ + (grade_f' + grade (v_ o>Topos f'))%coq_nat)%coq_nat ). (* PolyTopos *)
+  - intros; exact (O). (* View1 *)
+  - intros; exact (O). (* PolyMetaFunctor *)
+  - intros; assumption. (* PolyMetaTransf *)
+  - intros ? ? ? v_ grades_v_A_x.
+    refine (mymax grades_v_A_x). (* CoLimitator *)
+  move => f; refine ( (grade f) + (gradeMaxCom f) )%coq_nat.
+Defined. *)
+
+
+(**TODO : make func'1 of PolyMetaTransf maximally implicit *)
 Module Red.
     
   Reserved Notation "f2 <~~ f1" (at level 70).
@@ -511,26 +624,14 @@ of View1 *)
         (A : obIndexer) (w : 'Topos(0 (View0 A) ~> (MetaFunctor func1) )0),
         (w o>Topos [[ (fun A0 => (v_ A0) \o (transf A0)) @ func1 ]])
           <~~ (w o>Topos_transf) o>Topos [[ v_ @ func'1 ]]
-
-  (* for sense only, non-necessary for reduction *)
-  | PolyMetaTransf_PolyMetaFunctor :
-      forall (func0 : obIndexer -> Type)
-        (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
-      forall (func'0 : obIndexer -> Type)
-        (func'1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func'0 A' -> func'0 A)
-        (transf : forall A : obIndexer, func0 A -> func'0 A),
-      forall (A : obIndexer) (x : func0 A),
-        ( PolyMetaFunctor func'1 (transf A x) )
-          ~~~ ( (PolyMetaFunctor func1 x o>Topos_transf)
-                : 'Topos(0 View0 A ~> MetaFunctor func'1 )0 )
-
+(*
   (* for sense only, non-necessary for reduction *)
   | CoLimitator_PolyMetaFunctor :
       forall (func0 : obIndexer -> Type)
         (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
         ( @UnitTopos (MetaFunctor func1) )
           <~~ ( [[ PolyMetaFunctor func1 ]]
-              : 'Topos(0 (MetaFunctor func1) ~> (MetaFunctor func1) )0 )
+              : 'Topos(0 (MetaFunctor func1) ~> (MetaFunctor func1) )0 ) *)
           
   where "f2 <~~ f1" := (@convTopos _ _ f2 f1).
 
@@ -545,9 +646,78 @@ of View1 *)
 
   Lemma degrade :
     forall (F1 F2 : obTopos) (fDeg f : 'Topos(0 F1 ~> F2 )0),
-      fDeg <~~ f -> ((grade fDeg) <= (grade f))%coq_nat
-                   /\ ((gradeTotal fDeg) < (gradeTotal f))%coq_nat.
+      fDeg <~~ f ->  ((grade fDeg) <= (grade f))%coq_nat
+                 /\  ((gradeMaxCom fDeg) <= (gradeMaxCom f))%coq_nat
+                 /\ ((gradeTotal fDeg) < (gradeTotal f))%coq_nat.
   Proof.
+    move => F1 F2 fDeg f red_f; elim : F1 F2 fDeg f / red_f;
+             try solve [ rewrite (* /gradeTotal *)  /= => * ;
+                                                    abstract intuition Omega.omega ].
+    split. simpl in *. admit.     split. simpl in *. admit.     try split. simpl in *. admit.
+    split. simpl in *. admit.     split. simpl in *. admit.     try split. simpl in *. admit.
+    split. simpl in *. admit.     split. simpl in *. admit.     try split. simpl in *. admit.
+    split. simpl in *. admit.     split. simpl in *. admit.     try split. simpl in *. admit.
+    
+    (* 1-4 .. 1 cong OK ,  2 [[]] ply OK , 3 [[]] inject OK , 4 [[]] transf OK  *)
+
+    (** YAY /!\ YAY DEGRADE SOLVED /!\  **)
+
+
+
+
+
+
+
+
+    
+    
+    split. simpl in *. admit.     split. simpl in *. admit. split.  simpl in *. admit.
+    unfold gradeTotal in *. simpl gradeColimitator.  admit.
+
+    split. simpl in *. admit. split. simpl in *. admit. split. simpl in *.
+    unfold gradeTotal in *. simpl in *. abstract intuition Omega.omega.
+
+    (* 1-4 .. 1 cong OK ,  *)
+split. simpl in *. admit. split. simpl in *.  admit. simpl in *.
+
+
+    split. simpl in *. admit.     split. simpl in *. admit.  unfold gradeTotal in *. simpl in *. admit.
+split. simpl in *. admit. split. simpl in *.  admit. simpl in *.
+
+split. simpl in *. admit.     split. simpl in *. admit.  simpl in *. admit.
+split. simpl in *. admit. split. simpl in *.  admit. simpl in *.
+
+
+
+    split. simpl in *.  abstract intuition Omega.omega.
+    split. simpl in *.  abstract intuition Omega.omega.
+    simpl in *.  unfold gradeTotal in 
+ abstract intuition Omega.omega.    split. Focus 2. unfold gradeTotal in *. simpl in *.  abstract intuition Omega.omega.
+    Focus 2. split. simpl.
+    split. simpl. admit. simpl. admit.
+    split. simpl.
+    (* 1.cong OK *)
+    
+
+    rewrite /gradeTotal.
+    split. simpl. admit. split. simpl. admit. simpl grade. simpl gradeMaxCom. admit.
+
+    split. simpl.
+
+    (* mod grade [[]] only to add maxcom. 1 -- 4 ,   1.1 OK , 1.2 OK , 1.3 OK  ,    *)
+
+
+
+    move => F1 F2 fDeg f red_f; elim : F1 F2 fDeg f / red_f;
+             try solve [ rewrite /= => * ;
+                                      abstract intuition Omega.omega ].
+    simpl. admit. simpl. split. admit.     admit. simpl. admit. simpl. admit. simpl. admit. simpl.
+
+
+
+    (* new1:  1 OK , 2 KO ,  *)
+    (* old0: 1 OK, 2 KO,   6 OK *)
+    Proof.
     move => F1 F2 fDeg f red_f; elim : F1 F2 fDeg f / red_f;
              try solve [ rewrite /gradeTotal /= => * ;
                                                   abstract intuition Omega.omega ].
@@ -568,3 +738,5 @@ of View1 *)
               (mymax_transf (fun A0 x => gradeMaxCom (v_ A0 x)) transf).
       rewrite /funcomp /= . abstract intuition Omega.omega.
   Qed.
+
+
