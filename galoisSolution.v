@@ -344,33 +344,47 @@ Check
       'Topos(0 (MetaFunctor func1) ~> F )0.
 
 (* add indexer type parameter T instead of obIndexer *)
-Parameter mymax : forall (obIndexer : Type) (func0 : obIndexer -> Type),
+Definition mymax : forall (obIndexer : Type) (func0 : obIndexer -> Type),
     (forall (A : obIndexer), func0 A -> nat) -> nat.
-Axiom mymax_addr_const : forall (obIndexer : Type) (func0 : obIndexer -> Type),
+Admitted.
+Lemma mymax_monotone_ge : forall (obIndexer : Type) (func0 : obIndexer -> Type),
+    forall (w_ v_ : forall (A : obIndexer), func0 A -> nat),
+      (forall A x, ( w_ A x <= v_ A x )%coq_nat) -> ( mymax w_ <= mymax v_ )%coq_nat.
+Admitted.
+Lemma mymax_monotone_gt : forall (obIndexer : Type) (func0 : obIndexer -> Type),
+    forall (w_ v_ : forall (A : obIndexer), func0 A -> nat),
+      (forall A x, ( w_ A x < v_ A x )%coq_nat) -> ( mymax w_ < mymax v_ )%coq_nat.
+Admitted.
+Lemma mymax_addr_const : forall (obIndexer : Type) (func0 : obIndexer -> Type),
     forall (v_ : forall (A : obIndexer), func0 A -> nat) (n : nat),
       mymax (fun A x => (v_ A x + n)%coq_nat) = ((mymax v_) + n)%coq_nat.
-Axiom mymax_addl_const : forall (obIndexer : Type) (func0 : obIndexer -> Type),
+Admitted.
+Lemma mymax_addl_const : forall (obIndexer : Type) (func0 : obIndexer -> Type),
     forall (v_ : forall (A : obIndexer), func0 A -> nat) (n : nat),
       mymax (fun A x => (n + v_ A x)%coq_nat) = (n + (mymax v_))%coq_nat.
-Axiom mymax_add_le : forall (obIndexer : Type) (func0 : obIndexer -> Type),
+Admitted.
+Lemma mymax_add_succ : forall (obIndexer : Type) (func0 : obIndexer -> Type),
+    forall (v_ : forall (A : obIndexer), func0 A -> nat),
+      mymax (fun A x => S (v_ A x)%coq_nat) = (S (mymax v_))%coq_nat.
+Admitted.
+Lemma mymax_add_le : forall (obIndexer : Type) (func0 : obIndexer -> Type),
     forall (w_ v_ : forall (A : obIndexer), func0 A -> nat),
       (mymax (fun A x => (w_ A x + v_ A x)%coq_nat) <= ((mymax w_) + (mymax v_))%coq_nat)%coq_nat.
-Axiom mymax_ge : forall (obIndexer : Type) (func0 : obIndexer -> Type),
+Admitted.
+Lemma mymax_ge : forall (obIndexer : Type) (func0 : obIndexer -> Type),
     forall (v_ : forall (A : obIndexer), func0 A -> nat) A (x : func0 A),
       ( (v_ A x) <= (mymax v_) )%coq_nat .
-Axiom mymax_transf : forall (obIndexer : Type) (func0 : obIndexer -> Type),
+Admitted.
+Lemma mymax_transf : forall (obIndexer : Type) (func0 : obIndexer -> Type),
     forall (v_ : forall (A : obIndexer), func0 A -> nat),
     forall (func'0 : obIndexer -> Type) (transf : forall (A : obIndexer), func'0 A -> func0 A),
       ( mymax (fun A => v_ A \o transf A) <= mymax v_ )%coq_nat .
-Axiom mymax_monotone : forall (obIndexer : Type) (func0 : obIndexer -> Type),
-    forall (w_ v_ : forall (A : obIndexer), func0 A -> nat),
-      (forall A x, ( w_ A x <= v_ A x )%coq_nat) -> ( mymax w_ <= mymax v_ )%coq_nat.
-
+Admitted.
 
 Fixpoint grade (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0) {struct f} : nat
 with gradeMaxCom (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0) {struct f} : nat
 with gradeTotal (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0) {struct f} : nat.
-Proof.
+Proof. (* non-really mutual at the end *)
   case : F1 F2 / f.
   - intros F.
     exact (S O). (* UnitTopos *)
@@ -647,96 +661,34 @@ of View1 *)
   Lemma degrade :
     forall (F1 F2 : obTopos) (fDeg f : 'Topos(0 F1 ~> F2 )0),
       fDeg <~~ f ->  ((grade fDeg) <= (grade f))%coq_nat
-                 /\  ((gradeMaxCom fDeg) <= (gradeMaxCom f))%coq_nat
+                  (* /\  ((gradeMaxCom fDeg) <= (gradeMaxCom f))%coq_nat*)
                  /\ ((gradeTotal fDeg) < (gradeTotal f))%coq_nat.
   Proof.
     move => F1 F2 fDeg f red_f; elim : F1 F2 fDeg f / red_f;
              try solve [ rewrite (* /gradeTotal *)  /= => * ;
                                                     abstract intuition Omega.omega ].
-    split. simpl in *. admit.     split. simpl in *. admit.     try split. simpl in *. admit.
-    split. simpl in *. admit.     split. simpl in *. admit.     try split. simpl in *. admit.
-    split. simpl in *. admit.     split. simpl in *. admit.     try split. simpl in *. admit.
-    split. simpl in *. admit.     split. simpl in *. admit.     try split. simpl in *. admit.
-    
-    (* 1-4 .. 1 cong OK ,  2 [[]] ply OK , 3 [[]] inject OK , 4 [[]] transf OK  *)
-
-    (** YAY /!\ YAY DEGRADE SOLVED /!\  **)
-
-
-
-
-
-
-
-
-    
-    
-    split. simpl in *. admit.     split. simpl in *. admit. split.  simpl in *. admit.
-    unfold gradeTotal in *. simpl gradeColimitator.  admit.
-
-    split. simpl in *. admit. split. simpl in *. admit. split. simpl in *.
-    unfold gradeTotal in *. simpl in *. abstract intuition Omega.omega.
-
-    (* 1-4 .. 1 cong OK ,  *)
-split. simpl in *. admit. split. simpl in *.  admit. simpl in *.
-
-
-    split. simpl in *. admit.     split. simpl in *. admit.  unfold gradeTotal in *. simpl in *. admit.
-split. simpl in *. admit. split. simpl in *.  admit. simpl in *.
-
-split. simpl in *. admit.     split. simpl in *. admit.  simpl in *. admit.
-split. simpl in *. admit. split. simpl in *.  admit. simpl in *.
-
-
-
-    split. simpl in *.  abstract intuition Omega.omega.
-    split. simpl in *.  abstract intuition Omega.omega.
-    simpl in *.  unfold gradeTotal in 
- abstract intuition Omega.omega.    split. Focus 2. unfold gradeTotal in *. simpl in *.  abstract intuition Omega.omega.
-    Focus 2. split. simpl.
-    split. simpl. admit. simpl. admit.
-    split. simpl.
-    (* 1.cong OK *)
-    
-
-    rewrite /gradeTotal.
-    split. simpl. admit. split. simpl. admit. simpl grade. simpl gradeMaxCom. admit.
-
-    split. simpl.
-
-    (* mod grade [[]] only to add maxcom. 1 -- 4 ,   1.1 OK , 1.2 OK , 1.3 OK  ,    *)
-
-
-
-    move => F1 F2 fDeg f red_f; elim : F1 F2 fDeg f / red_f;
-             try solve [ rewrite /= => * ;
-                                      abstract intuition Omega.omega ].
-    simpl. admit. simpl. split. admit.     admit. simpl. admit. simpl. admit. simpl. admit. simpl.
-
-
-
-    (* new1:  1 OK , 2 KO ,  *)
-    (* old0: 1 OK, 2 KO,   6 OK *)
-    Proof.
-    move => F1 F2 fDeg f red_f; elim : F1 F2 fDeg f / red_f;
-             try solve [ rewrite /gradeTotal /= => * ;
-                                                  abstract intuition Omega.omega ].
-    - admit. (* rewrite /gradeTotal /= => func0 func1 F v_ v_0 red_v_.
-      move: (@mymax_monotone _ _ (fun A x => grade (v_0 A x)) (fun A x => grade (v_ A x))).
-      simpl in *. split. abstract intuition Omega.omega. *)
-    - rewrite /gradeTotal /= => func0 func1 F f_ F' transf. (* CoLimitator_morphism *)
-      move : (mymax_add_le (fun (A : obIndexer) (f : func0 A) => gradeMaxCom (f_ A f))
-                           (fun (A : obIndexer) (f : func0 A) => (gradeMaxCom transf + (2 + (grade (f_ A f) + grade transf)%coq_nat)%coq_nat)%coq_nat)).
-      rewrite !(mymax_addl_const , mymax_addr_const) /=.
+    - (* CoLimitator_cong *)
+      move => func0 func1 F v_ v_0 red_v_ IH.
+      move: (fun A x => proj1 (IH A x)).
+      move => /(@mymax_monotone_ge _ _ (fun A x => grade (v_0 A x)) (fun A x => grade (v_ A x))).
+      move: (fun A x => proj2 (IH A x)).
+      move => /(@mymax_monotone_gt _ _ (fun A x => gradeTotal (v_0 A x)) (fun A x => gradeTotal (v_ A x))).
+      move => /= . abstract intuition Omega.omega.
+    - (* CoLimitator_morphism *)
+      move => func0 func1 F v_ F' f /= .
+      rewrite !(mymax_add_succ , mymax_addl_const , mymax_addr_const) /=.
+      move: (mymax_add_le (fun (A : obIndexer) (x : func0 A) => (gradeTotal (v_ A x) + gradeTotal f)%coq_nat)
+                          (fun (A : obIndexer) (x : func0 A) => (grade (v_ A x) + grade f)%coq_nat.+2) ).
+      rewrite !(mymax_add_succ , mymax_addl_const , mymax_addr_const) /=.
       abstract intuition Omega.omega.
-    - rewrite /gradeTotal /= => func0 func1 F f_ A g. (* PolyMetaFunctor_CoLimitator *)
-      move: (mymax_ge (fun (A0 : obIndexer) (f : func0 A0) => grade (f_ A0 f)) g)
-              (mymax_ge (fun (A0 : obIndexer) (f : func0 A0) => gradeMaxCom (f_ A0 f)) g).
+    - (* PolyMetaFunctor_CoLimitator *)
+      move => func0 func1 F v_ A x /=. 
+      move: (mymax_ge (fun (A0 : obIndexer) (x0 : func0 A0) => grade (v_ A0 x0)) x)
+              (mymax_ge (fun (A0 : obIndexer) (x0 : func0 A0) => gradeTotal (v_ A0 x0)) x).
       abstract intuition Omega.omega.
-    - rewrite /gradeTotal /= => func'0 func'1 F v_ func0 func1 transf A w. (* PolyMetaTransf_CoLimitator *) 
+    - (* PolyMetaTransf_CoLimitator *)
+      move => func'0 func'1 F v_ func0 func1 transf A w /=.  
       move: (mymax_transf (fun A0 x => grade (v_ A0 x)) transf)
-              (mymax_transf (fun A0 x => gradeMaxCom (v_ A0 x)) transf).
-      rewrite /funcomp /= . abstract intuition Omega.omega.
-  Qed.
-
-
+              (mymax_transf (fun A0 x => gradeTotal (v_ A0 x)) transf).
+      rewrite /funcomp => /= . abstract intuition Omega.omega.
+Qed.
