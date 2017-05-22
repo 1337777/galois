@@ -649,8 +649,13 @@ of View1 *)
           
   where "f2 <~~ f1" := (@convTopos _ _ f2 f1).
 
-  Hint Constructors convTopos.
+  Module Export Ex_Notations.
 
+    Notation "f2 <~~ f1" := (@convTopos _ _ f2 f1).
+    Hint Constructors convTopos.
+
+  End Ex_Notations.
+  
   Lemma Red_convTopos_convTopos :
   forall (F1 F2 : obTopos) (fDeg f : 'Topos(0 F1 ~> F2 )0),
     fDeg <~~ f -> fDeg ~~~ f.
@@ -692,3 +697,115 @@ of View1 *)
               (mymax_transf (fun A0 x => gradeTotal (v_ A0 x)) transf).
       rewrite /funcomp => /= . abstract intuition Omega.omega.
 Qed.
+
+  Lemma degradeTotal :
+    forall (F1 F2 : obTopos) (fDeg f : 'Topos(0 F1 ~> F2 )0),
+      fDeg <~~ f ->  ((gradeTotal fDeg) < (gradeTotal f))%coq_nat.
+  Proof.
+    eapply degrade.
+  Qed.
+
+  Lemma degrade_gt0 :
+    forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
+      ((S O) <= (grade f))%coq_nat.
+  Proof.
+    move=> F1 F2 f; apply/leP; case : f; simpl; auto. (* alt: Omega.omega. *)
+  Qed.
+
+  Lemma degradeTotal_gt0 :
+    forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
+      ((S O) <= (gradeTotal f))%coq_nat.
+  Proof.
+    move=> F1 F2 f; case : f => /= * ; Omega.omega.
+  Qed.
+
+End Red.
+
+Module Sol.
+
+  Section Section1.
+
+    Reserved Notation "''Topos' (0 F1 ~> F2 )0"
+             (at level 25, format "''Topos' (0  F1  ~>  F2  )0").
+
+    Inductive Topos00 : obTopos -> obTopos -> Type :=
+
+    | UnitTopos : forall {F : obTopos}, 'Topos(0 F ~> F )0
+
+    | View1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 ->
+                                    'Topos(0 (View0 A) ~> (View0 A') )0
+
+    | PolyMetaFunctor :
+        forall (func0 : obIndexer -> Type)
+          (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
+          (forall (A : obIndexer), func0 A -> 'Topos(0 (View0 A) ~> (MetaFunctor func1) )0)
+
+    | PolyMetaTransf :
+        forall (func0 : obIndexer -> Type)
+          (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
+        forall (func'0 : obIndexer -> Type)
+          (func'1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func'0 A' -> func'0 A),
+        forall (transf : forall (A : obIndexer), func0 A -> func'0 A),
+          (forall (A : obIndexer), 'Topos(0 (View0 A) ~> (MetaFunctor func1) )0
+                              -> 'Topos(0 (View0 A) ~> (MetaFunctor func'1) )0)
+
+    | CoLimitator :
+        forall (func0 : obIndexer -> Type)
+          (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
+        forall F : obTopos,
+        forall (v_ : forall (A : obIndexer), func0 A -> 'Topos(0 (View0 A) ~> F )0),
+          (* cocone func1 v_ ->    cocone erased *)
+          'Topos(0 (MetaFunctor func1) ~> F )0
+
+    where "''Topos' (0 F1 ~> F2 )0" := (@Topos00 F1 F2).
+
+  End Section1.
+
+  Module Import Ex_Notations.
+    Delimit Scope sol_scope with sol.
+    Notation "''Topos' (0 F1 ~> F2 )0" := (@Topos00 F1 F2) : sol_scope.
+    Notation "'uTopos'" := (@UnitTopos _)(at level 0) : sol_scope. 
+    Notation "@ 'uTopos' F" :=
+      (@UnitTopos F) (at level 11, only parsing) : sol_scope.
+
+    Notation "f o>Topos_ transf" :=
+      (@PolyMetaTransf _ _ _ _ transf _ f) (at level 25, right associativity) : sol_scope.
+
+    Notation "[[ v_ @ func1 ]]" :=
+      (@CoLimitator _ func1 _ v_ ) (at level 0) : sol_scope.
+
+    Notation "[[ v_ ]]" :=
+      (@CoLimitator _ _ _ v_ ) (at level 0) : sol_scope.
+  End Ex_Notations.
+
+  Definition toMod :
+    forall (F1 F2 : obTopos), 'Topos(0 F1 ~> F2 )0 %sol -> 'Topos(0 F1 ~> F2 )0.
+  Proof.
+    (move => F1 F2 f); elim : F1 F2 / f =>
+    [ F
+    | A A' a
+    | func0 func1 A x
+    | func0 func1 func'0 func'1 transf A fSol fSol_toMod
+    | func0 func1 F vSol_ vSol_toMod ];
+      [ apply: (@uTopos F)
+      | apply: (Top.View1 a)
+      | apply: (Top.PolyMetaFunctor func1 x)
+      | apply: (fSol_toMod o>Topos_transf)
+      | apply: [[ vSol_toMod ]]
+      ].
+  Defined.
+
+End Sol.
+
+Section Section1.
+
+  Import Sol.Ex_Notations.
+  Import Red.Ex_Notations.
+
+  Fixpoint solveTopos len {struct len} :
+    forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0)
+      (H_gradeTotal : (gradeTotal f <= len)%coq_nat),
+      { fSol : 'Topos(0 F1 ~> F2 )0 %sol
+      | ( (Sol.toMod fSol) <~~ f ) \/ ( (Sol.toMod fSol) = f ) }.
+  Proof.
+    case : len => [ | len ].
