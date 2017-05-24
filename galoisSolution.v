@@ -548,12 +548,36 @@ Definition regularCardinalMax : forall (obIndexer : Type) (func0 : obIndexer -> 
                      (filter : (forall (A : obIndexer), func0 A -> Prop)),
     (forall (A : obIndexer), func0 A -> nat) -> nat.
 Admitted.
+Lemma regularCardinalMax_falsefilter : forall (obIndexer : Type) (func0 : obIndexer -> Type)
+                                         (filter : (forall (A : obIndexer), func0 A -> Prop)),
+    forall (v_ : forall (A : obIndexer), func0 A -> nat),
+      (forall A x, filter A x <-> False) ->
+      regularCardinalMax filter v_ = 0 .
+Admitted.
 Lemma regularCardinalMax_subfilter : forall (obIndexer : Type) (func0 : obIndexer -> Type)
                                        (filter : (forall (A : obIndexer), func0 A -> Prop)),
     forall (v_ : forall (A : obIndexer), func0 A -> nat),
     forall (filter' : (forall (A : obIndexer), func0 A -> Prop)),
       (forall A x, filter' A x -> filter A x) ->
       ( regularCardinalMax filter' v_ <= regularCardinalMax filter v_ )%coq_nat.
+Admitted.
+Lemma regularCardinalMax_samefilter : forall (obIndexer : Type) (func0 : obIndexer -> Type)
+                                       (filter : (forall (A : obIndexer), func0 A -> Prop)),
+    forall (v_ : forall (A : obIndexer), func0 A -> nat),
+    forall (filter' : (forall (A : obIndexer), func0 A -> Prop)),
+      (forall A x, filter' A x <-> filter A x) ->
+      ( regularCardinalMax filter' v_ = regularCardinalMax filter v_ )%coq_nat.
+Admitted.
+Lemma regularCardinalMax_unionfilter : forall (obIndexer : Type) (func0 : obIndexer -> Type)
+                                       (filter filter' : (forall (A : obIndexer), func0 A -> Prop)),
+    forall (v_ : forall (A : obIndexer), func0 A -> nat),
+      ( regularCardinalMax (fun A x => filter A x \/ filter' A x) v_ <= (regularCardinalMax filter v_ + regularCardinalMax filter' v_)%coq_nat )%coq_nat.
+Admitted.
+Lemma regularCardinalMax_congr : forall (obIndexer : Type) (func0 : obIndexer -> Type)
+                            (filter : (forall (A : obIndexer), func0 A -> Prop)),
+    forall (w_ v_ : forall (A : obIndexer), func0 A -> nat),
+      (forall A x, filter A x -> ( w_ A x = v_ A x )%coq_nat) ->
+      ( regularCardinalMax filter w_ = regularCardinalMax filter v_ )%coq_nat.
 Admitted.
 Lemma regularCardinalMax_monotone_ge : forall (obIndexer : Type) (func0 : obIndexer -> Type)
                             (filter : (forall (A : obIndexer), func0 A -> Prop)),
@@ -797,6 +821,7 @@ Module Red.
              exists fSol : 'Topos(0 (View0 A) ~> F )0 %sol, Sol.toTopos fSol = v_0 A x)) -> *)
         (forall (A : obIndexer) (x : func0 A), ~~ isSol.isSolbb (v_ A x) -> v_0 A x <~~ v_ A x) ->
         (forall (A : obIndexer) (x : func0 A), isSol.isSolbb (v_ A x) -> v_0 A x = v_ A x) ->
+        (forall (A : obIndexer) (x : func0 A), isSol.isSolbb (v_0 A x)) ->
         forall (A : obIndexer) (x : func0 A), ~~ isSol.isSolbb (v_ A x) ->
         [[ v_0 @ func1 ]] <~~ ( [[ v_ @ func1 ]]
                               : 'Topos(0 MetaFunctor func1 ~> F )0 )
@@ -914,6 +939,41 @@ of View1 *)
     move => F1 F2 fDeg f red_f; elim : F1 F2 fDeg f / red_f;
              try solve [ rewrite (* /gradeTotal *)  /= => * ;
                                                     abstract intuition Omega.omega ].
+    - (* CoLimitator_cong *)
+      move => func0 func1 F v_ v_0 red_v_ IH_red_v iden_v_ sol_v0 A x red_v_A_x.
+
+      move: (IH_red_v _ _ red_v_A_x) => IH_red_v_A_x.
+
+      move: (fun A x p => congr1 (@grade _ _) (iden_v_ A x p)).
+      move => /(@regularCardinalMax_congr _ _ (fun A x => isSol.isSolbb (v_ A x)) (fun A x => grade (v_0 A x)) (fun A x => grade (v_ A x))).
+      move: (fun A x p => congr1 (@gradeTotal _ _) (iden_v_ A x p)).
+      move => /(@regularCardinalMax_congr _ _ (fun A x => isSol.isSolbb (v_ A x)) (fun A x => gradeTotal (v_0 A x)) (fun A x => gradeTotal (v_ A x))).
+
+      move: (fun A x p => proj1 (IH_red_v A x p)).
+      move => /(@regularCardinalMax_monotone_ge _ _ (fun A x => ~~ isSol.isSolbb (v_ A x)) (fun A x => grade (v_0 A x)) (fun A x => grade (v_ A x))).
+
+      move: (fun A x p => proj2 (IH_red_v A x p)).
+      move => /(@regularCardinalMax_monotone_gt _ _ (fun A x => ~~ isSol.isSolbb (v_ A x)) (fun A x => gradeTotal (v_0 A x)) (fun A x => gradeTotal (v_ A x))) /(_ _ _ red_v_A_x (proj2 IH_red_v_A_x)) .
+
+      have Hlogical : forall (A : obIndexer) (x : func0 A), ~~ isSol.isSolbb (v_0 A x) <-> False .
+      { move => A0 x0. move: (sol_v0 A0 x0) -> => //. }
+      move : (Hlogical) => /(regularCardinalMax_falsefilter (fun A x => grade (v_0 A x))).
+      move : Hlogical => /(regularCardinalMax_falsefilter (fun A x => gradeTotal (v_0 A x))).
+      
+      have Hlogical2 : forall (A : obIndexer) (x : func0 A), isSol.isSolbb (v_0 A x) <-> (~~ isSol.isSolbb (v_ A x) \/ isSol.isSolbb (v_ A x)) .
+      { move => A0 x0. by case: ( isSol.isSolbb (v_ A0 x0)); intuition. }
+      move : (Hlogical2) => /(regularCardinalMax_samefilter (fun A x => grade (v_0 A x))).
+      move : Hlogical2 => /(regularCardinalMax_samefilter (fun A x => gradeTotal (v_0 A x))).
+
+      move: (regularCardinalMax_unionfilter (fun A x => ~~ isSol.isSolbb (v_ A x))
+                                            (fun A x => isSol.isSolbb (v_ A x))
+               (fun A x => grade (v_0 A x)) ).
+      move: (regularCardinalMax_unionfilter (fun A x => ~~ isSol.isSolbb (v_ A x))
+                                            (fun A x => isSol.isSolbb (v_ A x))
+                                            (fun A x => gradeTotal (v_0 A x)) ).
+
+      simpl; abstract intuition Omega.omega.
+
     - (* CoLimitator_cong *)
       move => func0 func1 F v_ v_0 red_v_ IH_red_v iden_v_ A x red_v_A_x. move: (IH_red_v _ _ red_v_A_x) => IH_red_v_A_x.
 
