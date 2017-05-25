@@ -424,7 +424,7 @@ End Sol.
 Module isSol.
 
   Inductive isSol : forall (F1 F2 : obTopos),
-    'Topos(0 F1 ~> F2 )0 -> Type :=
+    'Topos(0 F1 ~> F2 )0 -> Prop :=
 
   | UnitTopos : forall {F : obTopos}, isSol (@uTopos F)
 
@@ -457,7 +457,7 @@ Module isSol.
     Inductive destruct1 : forall A : obIndexer,
       forall func0 : obIndexer -> Type,
       forall func1 : forall A A' : obIndexer, 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A,
-        'Topos(0 View0 A ~> MetaFunctor func1 )0 -> Type :=
+        'Topos(0 View0 A ~> MetaFunctor func1 )0 -> Prop :=
     | PolyMetaFunctor :
         forall (func0 : obIndexer -> Type)
           (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
@@ -475,22 +475,22 @@ Module isSol.
     Lemma destruct1P : forall (F1 F2 : obTopos)
         (f : 'Topos(0 F1 ~> F2 )0),  isSol f ->
     (fun F1 : obTopos =>
- match F1 as o return (forall F2 : obTopos, 'Topos(0 o ~> F2 )0 -> Type) with
+ match F1 as o return (forall F2 : obTopos, 'Topos(0 o ~> F2 )0 -> Prop) with
  | View0 A =>
      fun F2 : obTopos =>
-     match F2 as o return ('Topos(0 View0 A ~> o )0 -> Type) with
-     | View0 A0 => fun _ : 'Topos(0 View0 A ~> View0 A0 )0 => unit
+     match F2 as o return ('Topos(0 View0 A ~> o )0 -> Prop) with
+     | View0 A0 => fun _ : 'Topos(0 View0 A ~> View0 A0 )0 => True
      | @MetaFunctor func0 func1 => [eta destruct1 (func1:=func1)]
      end
  | @MetaFunctor func0 func1 =>
-     fun (_tmp : obTopos) (_ : 'Topos(0 MetaFunctor func1 ~> _tmp )0) => unit
+     fun (_tmp : obTopos) (_ : 'Topos(0 MetaFunctor func1 ~> _tmp )0) => True
  end) F1 F2 f.
       intros F1 F2 f f_isSol. case: f / f_isSol.
-      - simpl. destruct F; intros. exact: tt.  exact: tt.
-      - intros. exact: tt.
+      - simpl. destruct F; intros. exact: I.  exact: I.
+      - intros. exact: I.
       - intros.  constructor.
         intros. constructor. assumption.
-      - intros. exact: tt.
+      - intros. exact: I.
     Defined.
   End destruct1.
   Definition isSolb : forall (F1 F2 : obTopos), forall (f : 'Topos(0 F1 ~> F2 )0),
@@ -528,17 +528,59 @@ Module isSol.
       *)
   Admitted.
 
-  Definition isSolbb : forall (F1 F2 : obTopos), forall (f : 'Topos(0 F1 ~> F2 )0), bool.
+  (*Definition isSolbb : forall (F1 F2 : obTopos), forall (f : 'Topos(0 F1 ~> F2 )0), bool.
     intros. apply: (isSolb f).
+  Defined. *)
+
+  Definition regularCardinalAll : forall (obIndexer : Type) (func0 : obIndexer -> Type),
+      (forall (A : obIndexer), func0 A -> bool) -> bool.
+  Admitted.
+
+  Lemma regularCardinalAllP1 : forall (obIndexer : Type) (func0 : obIndexer -> Type)
+                                (b_ : forall (A : obIndexer), func0 A -> bool),
+      reflect (forall A x, b_ A x) (regularCardinalAll b_).
+  Admitted.
+  Lemma regularCardinalAllP2 : forall (obIndexer : Type) (func0 : obIndexer -> Type)
+                                (b_ : forall (A : obIndexer), func0 A -> bool),
+      reflect (exists A, exists x, ~~ b_ A x) (~~ regularCardinalAll b_).
+  Admitted.
+(*  Definition regularCardinalAllIndex : forall (obIndexer : Type) (func0 : obIndexer -> Type)
+                                         (b_ : forall (A : obIndexer), func0 A -> bool),
+      regularCardinalAll b_ -> { A : obIndexer & { x : func0 A | b_ A x }}.
+  Admitted. *)
+  
+  Definition isSolbb : forall (F1 F2 : obTopos), forall (f : 'Topos(0 F1 ~> F2 )0), bool.
+    move => F1 F2 f. elim: F1 F2 /f.
+    - intros. exact: true.
+    - intros. exact: false.
+    - intros. exact: true.
+    - intros. exact: true.
+    - intros. assumption.
+    - intros func0 func1 F v_ IH_v_. exact: (regularCardinalAll IH_v_). 
   Defined.
 
+  Lemma isSolbbP : forall (F1 F2 : obTopos), forall (f : 'Topos(0 F1 ~> F2 )0),
+        reflect (isSol f) (isSolbb f).
+  Admitted.
+
+  Import Sol.Ex_Notations.
+  Lemma isSolbbP2 : forall (F1 F2 : obTopos), forall (f : 'Topos(0 F1 ~> F2 )0),
+        reflect (exists fSol : 'Topos(0 F1 ~> F2 )0 %sol , Sol.toTopos fSol = f) (isSolbb f).
+  Admitted.
+
+                         
+  Lemma isSolbb_toTopos : forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
+      isSolbb f -> ({ fSol : 'Topos(0 F1 ~> F2 )0 %sol | Sol.toTopos fSol = f}).
+  Admitted.
+
+(*
   Import Sol.Ex_Notations.
   Lemma isSol_toTopos : forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
       isSol f -> ({ fSol : 'Topos(0 F1 ~> F2 )0 %sol | Sol.toTopos fSol = f}).
   Admitted.
   Lemma toTopos_isSol : forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
       ({ fSol : 'Topos(0 F1 ~> F2 )0 %sol | Sol.toTopos fSol = f}) -> isSol f.
-  Admitted.
+  Admitted. *)
 
 End isSol.
 
@@ -973,45 +1015,59 @@ of View1 *)
                                             (fun A x => gradeTotal (v_0 A x)) ).
 
       simpl; abstract intuition Omega.omega.
-
-    - (* CoLimitator_cong *)
-      move => func0 func1 F v_ v_0 red_v_ IH_red_v iden_v_ A x red_v_A_x. move: (IH_red_v _ _ red_v_A_x) => IH_red_v_A_x.
-
-      have Hlogical : forall (A : obIndexer) (x : func0 A), ~~ isSol.isSolbb (v_0 A x) ->  ~~ isSol.isSolbb (v_ A x).
-      { move => A0 x0. apply: contra => J. by move : (J) => /iden_v_ -> . }
-      move : (Hlogical) => /(regularCardinalMax_subfilter (fun A x => grade (v_0 A x))).
-      move : Hlogical => /(regularCardinalMax_subfilter (fun A x => gradeTotal (v_0 A x))).
-
-      move: (fun A x p => proj1 (IH_red_v A x p)).
-      move => /(@regularCardinalMax_monotone_ge _ _ (fun A x => ~~ isSol.isSolbb (v_ A x)) (fun A x => grade (v_0 A x)) (fun A x => grade (v_ A x))).
-
-      move: (fun A x p => proj2 (IH_red_v A x p)).
-      move => /(@regularCardinalMax_monotone_gt _ _ (fun A x => ~~ isSol.isSolbb (v_ A x)) (fun A x => gradeTotal (v_0 A x)) (fun A x => gradeTotal (v_ A x))) /(_ _ _ red_v_A_x (proj2 IH_red_v_A_x)) .
-
-      simpl; abstract intuition Omega.omega.
-
-
-      (** WAIT  /!\ REDEFINE GRADES **)
-
       
     - (* CoLimitator_morphism *)
-      move => func0 func1 F v_ F' f /= .
-      rewrite !(regularCardinalMax_add_succ , regularCardinalMax_addl_const , regularCardinalMax_addr_const) /=.
+      move => func0 func1 F v_ F' f .
+
+      have Hlogical : forall (A : obIndexer) (x : func0 A), isSol.isSolbb (v_ A x o>Topos f) <-> False .
+      { move => A0 x0 //= . }
+      move : (Hlogical) => /(regularCardinalMax_falsefilter (fun A x => grade (v_ A x o>Topos f))).
+      move : Hlogical => /(regularCardinalMax_falsefilter (fun A x => gradeTotal (v_ A x o>Topos f))).
+
+      have Hlogical2 : forall (A : obIndexer) (x : func0 A), ~~ isSol.isSolbb (v_ A x o>Topos f) <-> (~~ isSol.isSolbb (v_ A x) \/ isSol.isSolbb (v_ A x)) .
+      { move => A0 x0 /=. by case: ( isSol.isSolbb (v_ A0 x0)); intuition. }
+      move : (Hlogical2) => /(regularCardinalMax_samefilter (fun A x => grade (v_ A x o>Topos f))).
+      move : Hlogical2 => /(regularCardinalMax_samefilter (fun A x => gradeTotal (v_ A x o>Topos f))).
+
+      move: (regularCardinalMax_unionfilter (fun A x => ~~ isSol.isSolbb (v_ A x))
+                                            (fun A x => isSol.isSolbb (v_ A x))
+               (fun A x => grade (v_ A x o>Topos f)) ).
+      move: (regularCardinalMax_unionfilter (fun A x => ~~ isSol.isSolbb (v_ A x))
+                                            (fun A x => isSol.isSolbb (v_ A x))
+                                            (fun A x => gradeTotal (v_ A x o>Topos f)) ).
+      
+      rewrite /= !(regularCardinalMax_add_succ , regularCardinalMax_addl_const , regularCardinalMax_addr_const) /=.
       move: (regularCardinalMax_add_le (fun A x => ~~ isSol.isSolbb (v_ A x)) (fun (A : obIndexer) (x : func0 A) => (gradeTotal (v_ A x) + gradeTotal f)%coq_nat)
                           (fun (A : obIndexer) (x : func0 A) => (grade (v_ A x) + grade f)%coq_nat.+2) ).
-      rewrite !(regularCardinalMax_add_succ , regularCardinalMax_addl_const , regularCardinalMax_addr_const) /=.
-      simpl; abstract intuition Omega.omega.
+      move: (regularCardinalMax_add_le (fun A x => isSol.isSolbb (v_ A x)) (fun (A : obIndexer) (x : func0 A) => (gradeTotal (v_ A x) + gradeTotal f)%coq_nat)
+                          (fun (A : obIndexer) (x : func0 A) => (grade (v_ A x) + grade f)%coq_nat.+2) ).
+      rewrite /= !(regularCardinalMax_add_succ , regularCardinalMax_addl_const , regularCardinalMax_addr_const) /=.
+      simpl; abstract intuition Omega.omega. (* YES /!\ ONCE *)
     - (* PolyMetaFunctor_CoLimitator *)
-      move => func0 func1 F v_ A x /=. 
-      move: (regularCardinalMax_ge (fun (A0 : obIndexer) (x0 : func0 A0) => grade (v_ A0 x0)) x)
-              (regularCardinalMax_ge (fun (A0 : obIndexer) (x0 : func0 A0) => gradeTotal (v_ A0 x0)) x).
-      abstract intuition Omega.omega.
+      move => func0 func1 F v_ A x .
+
+      move: (regularCardinalMax_unionfilter (fun A x => ~~ isSol.isSolbb (v_ A x))
+                                            (fun A x => isSol.isSolbb (v_ A x))
+               (fun A x => grade (v_ A x)) ).
+      move: (regularCardinalMax_unionfilter (fun A x => ~~ isSol.isSolbb (v_ A x))
+                                            (fun A x => isSol.isSolbb (v_ A x))
+                                            (fun A x => gradeTotal (v_ A x)) ).
+
+      have Hlogical: (~~ isSol.isSolbb (v_ A x) \/ isSol.isSolbb (v_ A x)).
+      { by case: ( isSol.isSolbb (v_ A x)); intuition. }
+      move: (Hlogical) => /(@regularCardinalMax_ge _ _ (fun A x => ~~ isSol.isSolbb (v_ A x) \/ isSol.isSolbb (v_ A x))
+                                                 (fun (A0 : obIndexer) (x0 : func0 A0) => grade (v_ A0 x0)) ).
+      move: Hlogical => /(@regularCardinalMax_ge _ _ (fun A x => ~~ isSol.isSolbb (v_ A x) \/ isSol.isSolbb (v_ A x))
+                                              (fun (A0 : obIndexer) (x0 : func0 A0) => gradeTotal (v_ A0 x0)) ).
+      simpl; abstract intuition Omega.omega.
     - (* PolyMetaTransf_CoLimitator *)
       move => func'0 func'1 F v_ func0 func1 transf A w /=.  
-      move: (regularCardinalMax_transf (fun A0 x => grade (v_ A0 x)) transf)
-              (regularCardinalMax_transf (fun A0 x => gradeTotal (v_ A0 x)) transf).
+      move: (regularCardinalMax_transf (fun A0 x => ~~ isSol.isSolbb (v_ A0 x)) (fun A0 x => grade (v_ A0 x)) transf)
+              (regularCardinalMax_transf (fun A0 x => isSol.isSolbb (v_ A0 x)) (fun A0 x => grade (v_ A0 x)) transf)
+              (regularCardinalMax_transf (fun A0 x => ~~ isSol.isSolbb (v_ A0 x)) (fun A0 x => gradeTotal (v_ A0 x)) transf)
+              (regularCardinalMax_transf (fun A0 x => isSol.isSolbb (v_ A0 x)) (fun A0 x => gradeTotal (v_ A0 x)) transf).
       rewrite /funcomp => /= . abstract intuition Omega.omega.
-Qed.
+Defined.
 
   Lemma degradeTotal :
     forall (F1 F2 : obTopos) (fDeg f : 'Topos(0 F1 ~> F2 )0),
@@ -1034,6 +1090,18 @@ Qed.
     move=> F1 F2 f; case : f => /= * ; Omega.omega.
   Qed.
 
+
+  (*
+  Lemma isSol_isRed : forall (F1 F2 : obTopos), forall (f : 'Topos(0 F1 ~> F2 )0),
+        forall fRed : 'Topos(0 F1 ~> F2 )0, (fRed <~~ f) ->
+                                       forall fSol : 'Topos(0 F1 ~> F2 )0 %sol, Sol.toTopos fSol = f ->
+                                                                           False .
+  Proof.
+    intros. subst. induction fSol; try solve [inversion_clear H]. Show 3. destruct H; inversion_clear fSol; inversion_clear H0. 
+    move => F1 F2 f fRed Hred. case: F1 F2 fRed f / Hred.
+    *)
+    
+    
 End Red.
 
 
@@ -1042,11 +1110,19 @@ Section Section1.
   Import Sol.Ex_Notations.
   Import Red.Ex_Notations.
 
+  Ltac rewriterTopos := repeat match goal with | [ HH : @eq (Topos00 _ _) _ _  |- _ ] =>  try rewrite -> HH in *; clear HH end. 
+  
+  Ltac tac_reduce :=
+    simpl in *; abstract (
+                    intuition (eauto; try subst; rewriterTopos; try congruence;
+                               eauto 12)).
+
+  
   Fixpoint solveTopos len {struct len} :
     forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0)
       (H_gradeTotal : (gradeTotal f <= len)%coq_nat),
       { fSol : 'Topos(0 F1 ~> F2 )0 %sol
-      | ( (Sol.toMod fSol) <~~ f ) \/ ( (Sol.toMod fSol) = f ) }.
+      & {( (Sol.toTopos fSol) <~~ f )} + {( (Sol.toTopos fSol) = f )} }.
   Proof.
     case : len => [ | len ].
 
@@ -1075,13 +1151,6 @@ Section Section1.
       (* f is PolyMetaFunctor func1 x *)
       + move => H_gradeTotal. exists (Sol.PolyMetaFunctor func1 x). right. reflexivity.
 
-        Ltac rewriterTopos := repeat match goal with | [ HH : @eq (Topos00 _ _) _ _  |- _ ] =>  try rewrite -> HH in *; clear HH end. 
-        
-    Ltac tac_reduce :=
-    simpl in *; abstract (
-    intuition (eauto; try subst; rewriterTopos; try congruence;
-                               eauto 12)).
-
       (* f is f o>Topos_transf *)
       + move => H_gradeTotal.
         case : (solveTopos len _ _ f) =>
@@ -1093,20 +1162,80 @@ Section Section1.
 
       (* f is [[ v_ @ func1 ]] *)
       + move => H_gradeTotal.
-        case : (solveTopos len _ _ v_) =>
-        [ | fSol fSol_prop ].
-        * move : H_gradeTotal; clear;
-            rewrite /gradeTotal /=; move => *; abstract Omega.omega.
-        * exists (fSol o>Topos_transf)%sol.
-          clear -fSol_prop. tac_reduce.
+        have gradeTotal_v_ : forall A x , (gradeTotal (v_ A x) <= len)%coq_nat.
+        { move => A x; move : H_gradeTotal; clear.
+          (* copy-paste above *)
+          move: (regularCardinalMax_unionfilter (fun A x => ~~ isSol.isSolbb (v_ A x))
+                                                (fun A x => isSol.isSolbb (v_ A x))
+                                                (fun A x => grade (v_ A x)) ).
+          move: (regularCardinalMax_unionfilter (fun A x => ~~ isSol.isSolbb (v_ A x))
+                                                (fun A x => isSol.isSolbb (v_ A x))
+                                                (fun A x => gradeTotal (v_ A x)) ).
+
+          have Hlogical: (~~ isSol.isSolbb (v_ A x) \/ isSol.isSolbb (v_ A x)).
+          { by case: ( isSol.isSolbb (v_ A x)); intuition. }
+          move: (Hlogical) => /(@regularCardinalMax_ge _ _ (fun A x => ~~ isSol.isSolbb (v_ A x) \/ isSol.isSolbb (v_ A x))
+                                                      (fun (A0 : obIndexer) (x0 : func0 A0) => grade (v_ A0 x0)) ).
+          move: Hlogical => /(@regularCardinalMax_ge _ _ (fun A x => ~~ isSol.isSolbb (v_ A x) \/ isSol.isSolbb (v_ A x))
+                                                    (fun (A0 : obIndexer) (x0 : func0 A0) => gradeTotal (v_ A0 x0)) ).
+          simpl; abstract intuition Omega.omega.
+        }
+        
+        set solveTopos_v_ := (fun A x => solveTopos len _ _ (v_ A x) (gradeTotal_v_ A x)).
+        set vSol_ := (fun A x => projT1 (solveTopos_v_ A x)).
+        set vSol_prop_ := (fun A x => projT2 (solveTopos_v_ A x)).
+        set vSol_propb_ := (fun A x => ~~ ((projT2 (solveTopos_v_ A x)) : bool)).
+
+        case: (isSol.regularCardinalAllP2 (fun A x => isSol.isSolbb (v_ A x))) => H_someRed.
+        * have vSol_prop_isRed_: forall (A : obIndexer) (x : func0 A), ~~ isSol.isSolbb (v_ A x) ->
+                                                                  Sol.toTopos (vSol_ A x) <~~ v_ A x .
+          { intros A x. (case: (vSol_prop_ A x) => //= ) ;
+                          ( case (isSol.isSolbbP2 (v_ A x)) => //= ) ;
+                          abstract firstorder.
+          }
+
+          have vSol_prop_isSol_: forall (A : obIndexer) (x : func0 A), isSol.isSolbb (v_ A x) ->
+                                                                  Sol.toTopos (vSol_ A x) = v_ A x .
+          { intros A x. (case: (vSol_prop_ A x) => //= ) .
+            ( case (isSol.isSolbbP2 (v_ A x)) => //= ).
+            intros. exfalso.  admit.
+          }
+
+          exists [[ fun A x => (vSol_ A x) ]]%sol. left. 
+          simpl. move: H_someRed  => [A [x H_someRed_prop] ].
+          apply: Red.CoLimitator_cong; [assumption | assumption | | eassumption].
+          intros; apply/(introT (isSol.isSolbbP2 (_))); eexists; reflexivity.
+
+        * (* have v_A_x_allSol' : (forall (A : obIndexer) (x : func0 A), isSol.isSolbb (v_ A x)).
+          { intros. case E : (isSol.isSolbb _) => //=. exfalso; apply: H_someRed.
+            exists A , x . by move: E => -> . } *)
+
+          have v_A_x_allSol : forall A x,  ({ fSol  | Sol.toTopos fSol = v_ A x}).
+          { intros. apply: isSol.isSolbb_toTopos.
+            case E : (isSol.isSolbb _) => //=. exfalso; apply: H_someRed.
+            exists A , x . by move: E => -> . }
+
+          set v_A_x_allSol_data := (fun A x => projT1 (v_A_x_allSol A x)).
+          set v_A_x_allSol_prop := (fun A x => projT2 (v_A_x_allSol A x)).
+
+          exists [[ fun A x => (v_A_x_allSol_data A x) ]]%sol. right.
+          simpl. simpl in v_A_x_allSol_prop.
+          About congr1. apply: congr1.
+          Require FunctionalExtensionality.
+          apply: Coq.Logic.FunctionalExtensionality.functional_extensionality_dep.
+          intros A. apply: Coq.Logic.FunctionalExtensionality.functional_extensionality.
+          intros x. apply: v_A_x_allSol_prop.
+
+          (** TODO ADD functional extensionality for indexer obIndexer and elements of functors **)
 
 
+    - (* f is f_ o>Topos f' *)
 
-          
+      
+      
   (**
 
 -------------------------------------------------------
 
    **)
-
 
