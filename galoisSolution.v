@@ -30,22 +30,23 @@ computational/decidable ? Some promised COQ program shall/may OK these. Promise 
 
 #+BEGIN_SRC coq :exports both :results silent **)
 
-Require Import borceuxSolution_half_old.
 Require Import mathcomp.ssreflect.ssreflect.
 From mathcomp Require Import ssrbool ssrfun eqtype ssrnat seq fintype.
 Require Import Setoid.
 Require Omega. 
 
-Set Implicit Arguments.
-Unset Strict Implicits.
-Unset Printing Implicit Defensive.
-
 (**#+END_SRC
 
 #+BEGIN_SRC coq :exports both :results silent **)
 
+Module METAFUNCTORS.
+
+Global Set Implicit Arguments.
+Global Unset Strict Implicit.
+Global Unset Printing Implicit Defensive.
+ 
 Parameter obIndexer : Type (* regular cardinal *).
-Parameter Indexer : obIndexer -> obIndexer -> Type.
+Parameter Indexer : obIndexer -> obIndexer -> Type (* regular cardinal *).
 Notation "''Indexer' (0 A1 ~> A2 )0" :=
   (@Indexer A1 A2) (at level 25, format "''Indexer' (0  A1  ~>  A2  )0").
 Parameter polyIndexer : forall (A2 A1 : obIndexer),
@@ -57,35 +58,16 @@ Parameter convIndexer : forall (A1 A2 : obIndexer),
     'Indexer(0 A1 ~> A2 )0 -> 'Indexer(0 A1 ~> A2 )0 -> Prop.
 Notation "a2 ~~ a1" := (@convIndexer _ _ a2 a1) (at level 70).
 
-Inductive obTopos : Type :=
+Inductive obTopos : Type (* larger cardinal *) :=
 | View0 : forall A : obIndexer, obTopos
-| MetaFunctor : forall (func0 : obIndexer -> Type)
+| MetaFunctor : forall (func0 : obIndexer -> Type (* regular cardinal *))  
                   (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
     obTopos.
 
 Reserved Notation "''Topos' (0 F1 ~> F2 )0"
          (at level 25, format "''Topos' (0  F1  ~>  F2  )0").
 
-(*
-Inductive Topos00 : obTopos -> obTopos -> Type :=
-| UnitTopos : forall {F : obTopos}, 'Topos(0 F ~> F )0
-| PolyTopos : forall (F2 : obTopos) (F1 : obTopos)
-  , 'Topos(0 F2 ~> F1 )0 -> forall F1' : obTopos,
-      'Topos(0 F1 ~> F1' )0 -> 'Topos(0 F2 ~> F1' )0
-| View1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 ->
-                                'Topos(0 (View0 A') ~> (View0 A) )0
-| MetaFunctor1 : forall (func0 : obIndexer -> Type)
-                   (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
-              forall (A : obIndexer), func0 A -> 'Topos(0 (View0 A) ~> (MetaFunctor0 func1) )0
-| Transf : forall (func0 : obIndexer -> Type)
-             (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
-    forall (func'0 : obIndexer -> Type)
-      (func'1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func'0 A' -> func'0 A),
-    forall (transf : forall A : obIndexer, func0 A -> func'0 A),
-    forall (A : obIndexer), func0 A -> 'Topos(0 (View0 A) ~> (MetaFunctor0 func'1) )0
-where "''Topos' (0 F1 ~> F2 )0" := (@Topos00 F1 F2).*)
-
-Inductive Topos00 : obTopos -> obTopos -> Type :=
+Inductive Topos00 : obTopos -> obTopos -> Type (* larger cardinal, possible *) :=
 
 | UnitTopos : forall {F : obTopos}, 'Topos(0 F ~> F )0
 
@@ -97,7 +79,7 @@ Inductive Topos00 : obTopos -> obTopos -> Type :=
                                 'Topos(0 (View0 A) ~> (View0 A') )0
 
 | PolyMetaFunctor :
-    forall (func0 : obIndexer -> Type (* regular cardinal *))
+    forall (func0 : obIndexer -> Type (* same, regular cardinal *))
       (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
       (forall (A : obIndexer), func0 A -> 'Topos(0 (View0 A) ~> (MetaFunctor func1) )0)
 
@@ -139,19 +121,13 @@ Notation "[[ v_ @ func1 ]]" :=
 Notation "[[ v_ ]]" :=
   (@CoLimitator _ _ _ v_ ) (at level 0).
 
-Ltac rewriterTopos := repeat match goal with | [ HH : @eq (Topos00 _ _) _ _  |- _ ] =>  try rewrite -> HH in *; clear HH end. 
-
+Ltac rewriterTopos :=
+  repeat match goal with
+         | [ HH : @eq (Topos00 _ _) _ _  |- _ ] =>
+           try rewrite -> HH in *; clear HH
+         end. 
 
 Reserved Notation "f2 ~~~ f1"  (at level 70).
-
-(* Definition CoLimitator_Inject
-           (func0 : obIndexer -> Type)
-           (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A) (*lacked?*)
-           (func'0 : obIndexer -> Type)
-           (func'1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func'0 A' -> func'0 A)
-           (transf : forall A : obIndexer, func0 A -> func'0 A) : 
-  'Topos(0 (MetaFunctor func1) ~> (MetaFunctor func'1) )0
-   :=  [[Pol func1 func'1 transf]]. *)
 
 Inductive convTopos : forall (F1 F2 : obTopos),
     'Topos(0 F1 ~> F2 )0 -> 'Topos(0 F1 ~> F2 )0 -> Prop :=
@@ -416,8 +392,8 @@ Module Sol.
     | func0 func1 func'0 func'1 transf A fSol fSol_toMod
     | func0 func1 F vSol_ vSol_toMod ];
       [ apply: (@uTopos F)
-      | apply: (Top.View1 a)
-      | apply: (Top.PolyMetaFunctor func1 x)
+      | apply: (METAFUNCTORS.View1 a)
+      | apply: (METAFUNCTORS.PolyMetaFunctor func1 x)
       | apply: (fSol_toMod o>Topos_transf)
       | apply: [[ vSol_toMod ]]
       ].
@@ -500,7 +476,7 @@ Module Sol.
     Defined.
 
   End Destruct_domMetaFunctor.
-  
+
 End Sol.
 
 Module isSol.
@@ -511,12 +487,12 @@ Module isSol.
   | UnitTopos : forall {F : obTopos}, isSol (@uTopos F)
 
   | View1 : forall (A A' : obIndexer), forall (a : 'Indexer(0 A ~> A' )0),
-        isSol (Top.View1 a)
+        isSol (METAFUNCTORS.View1 a)
 
   | PolyMetaFunctor :
       forall (func0 : obIndexer -> Type)
         (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
-      forall (A : obIndexer), forall (x : func0 A), isSol (Top.PolyMetaFunctor func1 x)
+      forall (A : obIndexer), forall (x : func0 A), isSol (METAFUNCTORS.PolyMetaFunctor func1 x)
 
   | PolyMetaTransf :
       forall (func0 : obIndexer -> Type)
@@ -535,101 +511,14 @@ Module isSol.
         (* cocone func1 v_ ->    cocone erased *)
         (forall A x, isSol (v_ A x)) -> isSol ([[v_ @ func1 ]]).
 
-  Module destruct1.
-    Inductive destruct1 : forall A : obIndexer,
-      forall func0 : obIndexer -> Type,
-      forall func1 : forall A A' : obIndexer, 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A,
-        'Topos(0 View0 A ~> MetaFunctor func1 )0 -> Prop :=
-    | PolyMetaFunctor :
-        forall (func0 : obIndexer -> Type)
-          (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
-        forall (A : obIndexer), forall (x : func0 A), destruct1 (Top.PolyMetaFunctor func1 x)
-    | PolyMetaTransf :
-      forall (func0 : obIndexer -> Type)
-        (func1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A),
-      forall (func'0 : obIndexer -> Type)
-        (func'1 : forall (A A' : obIndexer), 'Indexer(0 A ~> A' )0 -> func'0 A' -> func'0 A),
-      forall (transf : forall (A : obIndexer), func0 A -> func'0 A),
-      forall (A : obIndexer), forall (f : 'Topos(0 (View0 A) ~> (MetaFunctor func1) )0),
-          isSol f ->
-          destruct1 (f o>Topos_transf : 'Topos(0 (View0 A) ~> (MetaFunctor func'1) )0).
-
-    Lemma destruct1P : forall (F1 F2 : obTopos)
-        (f : 'Topos(0 F1 ~> F2 )0),  isSol f ->
-    (fun F1 : obTopos =>
- match F1 as o return (forall F2 : obTopos, 'Topos(0 o ~> F2 )0 -> Prop) with
- | View0 A =>
-     fun F2 : obTopos =>
-     match F2 as o return ('Topos(0 View0 A ~> o )0 -> Prop) with
-     | View0 A0 => fun _ : 'Topos(0 View0 A ~> View0 A0 )0 => True
-     | @MetaFunctor func0 func1 => [eta destruct1 (func1:=func1)]
-     end
- | @MetaFunctor func0 func1 =>
-     fun (_tmp : obTopos) (_ : 'Topos(0 MetaFunctor func1 ~> _tmp )0) => True
- end) F1 F2 f.
-      intros F1 F2 f f_isSol. case: f / f_isSol.
-      - simpl. destruct F; intros. exact: I.  exact: I.
-      - intros. exact: I.
-      - intros.  constructor.
-        intros. constructor. assumption.
-      - intros. exact: I.
-    Defined.
-  End destruct1.
-  Definition isSolb : forall (F1 F2 : obTopos), forall (f : 'Topos(0 F1 ~> F2 )0),
-        isSol f +  (isSol f -> False).
-    (* move => F1 F2 f; elim : F1 F2 / f =>
-    [ F
-    | F1 F2 f_ IH_f_ F1' f' IH_f'
-    | A A' a
-    | func0 func1 A x
-    | func0 func1 func'0 func'1 transf A f IH_f
-    | func0 func1 F v_ IH_v_ ].
-    - left; constructor.
-    - right. intro. inversion X.
-    - left; constructor.
-    - left; constructor.
-    - case: IH_f => IH_f; [ left; constructor; apply: IH_f | right; intro; apply:IH_f].
-      move: X. move: (Logic.eq_refl (f o>Topos_transf :'Topos(0 View0 A ~> MetaFunctor func'1 )0 )).
-      move: {-2}(f o>Topos_transf :'Topos(0 View0 A ~> MetaFunctor func'1 )0 ).
-
-      intros. move: H. move: (destruct1P X) => LL. Set Printing Implicit.
-      Show. move LL at top. destruct LL. inversion 1. injection 1. intros. subst. inversion 1.
-       move : X. case: t / LL .
-      case: (destruct1P X). intro K. case: (f o>Topos_transf) / K .  inversion K.
-      inversion_clear H.
-      
-
-      right. move : (Logic.eq_refl (f_ o>Topos f')). move : {-2}(f_ o>Topos f').
-      move => t HH JJ. move: HH. case: t / JJ. case : (f_ o>Topos f') / H .
-      [ left; constructor
-      | apply: (Top.View1 a)
-      | apply: (Top.PolyMetaFunctor func1 x)
-      | apply: (fSol_toMod o>Topos_transf)
-      | apply: [[ vSol_toMod ]]
-      ].
-      *)
-  Admitted.
-
-  (*Definition isSolbb : forall (F1 F2 : obTopos), forall (f : 'Topos(0 F1 ~> F2 )0), bool.
-    intros. apply: (isSolb f).
-  Defined. *)
-
   Definition regularCardinalAll : forall (obIndexer : Type) (func0 : obIndexer -> Type),
       (forall (A : obIndexer), func0 A -> bool) -> bool.
   Admitted.
 
-  Lemma regularCardinalAllP1 : forall (obIndexer : Type) (func0 : obIndexer -> Type)
-                                (b_ : forall (A : obIndexer), func0 A -> bool),
-      reflect (forall A x, b_ A x) (regularCardinalAll b_).
-  Admitted.
-  Lemma regularCardinalAllP2 : forall (obIndexer : Type) (func0 : obIndexer -> Type)
+  Lemma regularCardinalAllP : forall (obIndexer : Type) (func0 : obIndexer -> Type)
                                 (b_ : forall (A : obIndexer), func0 A -> bool),
       reflect (exists A, exists x, ~~ b_ A x) (~~ regularCardinalAll b_).
   Admitted.
-(*  Definition regularCardinalAllIndex : forall (obIndexer : Type) (func0 : obIndexer -> Type)
-                                         (b_ : forall (A : obIndexer), func0 A -> bool),
-      regularCardinalAll b_ -> { A : obIndexer & { x : func0 A | b_ A x }}.
-  Admitted. *)
   
   Definition isSolbb : forall (F1 F2 : obTopos), forall (f : 'Topos(0 F1 ~> F2 )0), bool.
     move => F1 F2 f. elim: F1 F2 /f.
@@ -650,26 +539,61 @@ Module isSol.
         reflect (exists fSol : 'Topos(0 F1 ~> F2 )0 %sol , Sol.toTopos fSol = f) (isSolbb f).
   Admitted.
 
-                         
-  Lemma isSolbb_toTopos : forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
-      isSolbb f -> ({ fSol : 'Topos(0 F1 ~> F2 )0 %sol | Sol.toTopos fSol = f}).
+  Lemma topos_functional_extensionality :
+    forall (func0 : obIndexer -> Type)
+      (func1 : forall A A' : obIndexer, 'Indexer(0 A ~> A' )0 -> func0 A' -> func0 A)
+      (F : obTopos)
+      (f_ g_ : forall A : obIndexer, func0 A -> ('Topos(0 View0 A ~> F )0)),
+      (forall A x, f_ A x = g_ A x ) -> f_ = g_ .
   Admitted.
 
-(*
-  Import Sol.Ex_Notations.
-  Lemma isSol_toTopos : forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
-      isSol f -> ({ fSol : 'Topos(0 F1 ~> F2 )0 %sol | Sol.toTopos fSol = f}).
-  Admitted.
-  Lemma toTopos_isSol : forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
-      ({ fSol : 'Topos(0 F1 ~> F2 )0 %sol | Sol.toTopos fSol = f}) -> isSol f.
-  Admitted. *)
+  Lemma isSolbb_isSol : forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
+      isSolbb f -> ({ fSol : 'Topos(0 F1 ~> F2 )0 %sol | Sol.toTopos fSol = f}).
+  Proof.
+    move => F1 F2 f ; elim : F1 F2 / f => 
+    [ F _  (* @uTopos F %sol*)
+    | //
+    | A A' a (* Sol.View1 a *)
+    | func0 func1 A x _ (* Sol.PolyMetaFunctor func1 x *)
+    | func0 func1 func'0 func'1 transf A f  (* f o>Topos_transf %sol *)
+    | func0 func1 F f_ ] (* [[ f_ @ func1 ]] %sol *).
+    - exists ((@uTopos F)%sol). reflexivity.
+    - exists ((Sol.View1 a)%sol). reflexivity.
+    - exists ((Sol.PolyMetaFunctor func1 x)%sol). reflexivity.
+    - move => H /H [fSol fSol_prop].
+      exists ((fSol o>Topos_transf)%sol). by subst.
+    - move => IH /= /regularCardinalAllP f_isSolbb.
+      have f_isSolbb' : (forall (A : obIndexer) (x : func0 A), isSolbb (f_ A x))
+        by intros; clear -f_isSolbb; apply/negPn/negP; intuition eauto.
+      set fSol_ := (fun A x => projT1(IH A x (f_isSolbb' A x))).
+      set fSol_prop := (fun A x => projT2(IH A x (f_isSolbb' A x))).
+      exists ([[ fSol_ ]] %sol). simpl; apply: congr1.
+      apply: (topos_functional_extensionality func1).
+        by move => A x; move: fSol_prop => <- .
+  Qed.
+
+  Lemma isSolbbN_isSolN : forall (F1 F2 : obTopos),
+      forall fSol : 'Topos(0 F1 ~> F2 )0 %sol, forall (f : 'Topos(0 F1 ~> F2 )0), (Sol.toTopos fSol) = f -> isSolbb f.
+  Proof.
+    move => F1 F2 fSol ; elim : F1 F2 / fSol ; try (intros; subst; reflexivity).
+    intros; subst; simpl. intuition.
+    intros; subst; simpl. apply/regularCardinalAllP.
+    move => [A [x isSolbb_v_] ]. move: isSolbb_v_. apply/negP/negPn. eapply H; reflexivity.
+  Qed.
+
+  Lemma isSolbbN_isSolN_alt : forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
+      ~~ isSolbb f ->  ~ ( exists fSol : 'Topos(0 F1 ~> F2 )0 %sol , (Sol.toTopos fSol) = f ).
+  Proof.
+    intros F1 F2 f f_isSolbbN []. move: f_isSolbbN. apply/negP/negPn. apply: isSolbbN_isSolN.
+    eauto.
+  Qed.
 
 End isSol.
 
 
-(* add indexer type parameter T instead of obIndexer *)
-Definition regularCardinalMax : forall (obIndexer : Type) (func0 : obIndexer -> Type)
-                     (filter : (forall (A : obIndexer), func0 A -> Prop)),
+Definition regularCardinalMax : forall (obIndexer : Type (* regular cardinal *))
+                                  (func0 : obIndexer -> Type (* same, regular cardinal *))
+                                  (filter : (forall (A : obIndexer), func0 A -> Prop)),
     (forall (A : obIndexer), func0 A -> nat) -> nat.
 Admitted.
 Lemma regularCardinalMax_falsefilter : forall (obIndexer : Type) (func0 : obIndexer -> Type)
@@ -747,15 +671,6 @@ Lemma regularCardinalMax_transf : forall (obIndexer : Type) (func0 : obIndexer -
     forall (func'0 : obIndexer -> Type) (transf : forall (A : obIndexer), func'0 A -> func0 A),
       ( regularCardinalMax (fun A => filter A \o transf A) (fun A => v_ A \o transf A) <= regularCardinalMax filter v_ )%coq_nat .
 Admitted.
-(*
-Definition regularCardinalMax_index : forall (obIndexer : Type) (func0 : obIndexer -> Type),
-    (forall (A : obIndexer), func0 A -> nat) -> {A : obIndexer & func0 A}.
-Admitted.
-Lemma regularCardinalMax_regularCardinalMax_index : forall (obIndexer : Type) (func0 : obIndexer -> Type)
-                            (v_ : forall (A : obIndexer), func0 A -> nat),
-    v_ (projT1 (regularCardinalMax_index v_)) (projT2 (regularCardinalMax_index v_)) = regularCardinalMax v_ .
-Admitted.
-*)
   
 Fixpoint grade (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0) {struct f} : nat
 with gradeMaxCom (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0) {struct f} : nat
@@ -809,91 +724,6 @@ Proof.
                  (regularCardinalMax (fun A x => isSol.isSolbb (f_ A x)) (fun A x => (  gradeTotal _ _ (f_ A x) )%coq_nat)) )%coq_nat)). (* CoLimitator *)
 Defined.
 
-(*
-  case : F1 F2 / f.
-  - intros F.
-    exact ((S O) +
-           (O))%coq_nat. (* UnitTopos *)
-  - intros F2 F1 f_ F1' f'.
-    refine ((S  (S (grade _ _ f_ + grade _ _ f')%coq_nat)) +
-            ( ( (gradeMaxCom _ _ f_ + (gradeMaxCom _ _ f' + (S (S (grade _ _ f_ + grade _ _ f')%coq_nat)))%coq_nat)%coq_nat)) )%coq_nat. (* PolyTopos *)
-  - intros A A' a.
-    exact ((S (S O)) +
-           (O) )%coq_nat. (* View1 *)
-  - intros func0 func1 A x.
-    exact ((S (S O)) +
-           (O))%coq_nat. (* PolyMetaFunctor *)
-  - intros func0 func1 func'0 func'1 transf A f.
-    refine ((S (S (grade _ _ f))) +
-            (gradeMaxCom _ _ f))%coq_nat. (* PolyMetaTransf *)
-  - intros func0 func1 F f_.
-    refine (S (S (regularCardinalMax (fun A x => (*gradeTotal _ _ (f_ A x) *)  (grade _ _ (f_ A x) + gradeMaxCom _ _ (f_ A x))%coq_nat  )))). (* CoLimitator *) *)
-
-
-(*
-Definition grade :
-  forall (F1 F2 : obTopos), 'Topos(0 F1 ~> F2 )0 -> nat.
-Proof.
-    move => F1 F2 f; elim : F1 F2 / f.
-    - intros; exact (S O). (* UnitTopos *)
-    - move => ? ? f_ grade_f_ ? f' grade_f';
-               refine (S  (S (grade_f_ + grade_f')%coq_nat)). (* PolyTopos *)
-    - intros; exact (S (S O)). (* View1 *)
-    - intros; exact (S (S O)). (* PolyMetaFunctor *)
-    - intros; refine (S (S _)); assumption. (* PolyMetaTransf *)
-    - intros ? ? ? f_ grades_f_A_f.
-      refine (S (S (regularCardinalMax grades_f_A_f))). (* CoLimitator *)
-Defined.
-
-Definition gradeMaxCom : 
-  forall (F1 F2 : obTopos), 'Topos(0 F1 ~> F2 )0 -> nat.
-Proof.
-  move => F1 F2 f; elim : F1 F2 / f.
-  - intros; exact (O). (* UnitTopos *)
-  - move => ? ? f_ grade_f_ ? f' grade_f';
-             refine ((grade_f_ + (grade_f' + grade (f_ o>Topos f'))%coq_nat)%coq_nat ). (* PolyTopos *)
-  - intros; exact (O). (* View1 *)
-  - intros; exact (O). (* PolyMetaFunctor *)
-  - intros; assumption. (* PolyMetaTransf *)
-  - intros ? ? ? v_ grades_v_A_x.
-    refine (regularCardinalMax grades_v_A_x). (* CoLimitator *)
-Defined.
-
-Definition gradeTotal : 
-  forall (F1 F2 : obTopos), 'Topos(0 F1 ~> F2 )0 -> nat.
-Proof.
-  move => F1 F2 f; elim : F1 F2 / f.
-  - intros F; exact ((grade (@UnitTopos F) + (O))%coq_nat). (* UnitTopos *)
-  - move => F2 F1 f_ grade_f_ F1' f' grade_f';
-             refine (grade (f_ o>Topos f') + (S (grade_f_ + (grade_f' + grade (f_ o>Topos f'))%coq_nat)%coq_nat ))%coq_nat. (* PolyTopos *)
-  - intros A A' a; exact (grade (View1 a) + (O))%coq_nat. (* View1 *)
-  - intros func0 func1 A x; exact (grade (PolyMetaFunctor func1 x) + (O))%coq_nat. (* PolyMetaFunctor *)
-  - intros func0 func1 func'0 func'1 transf A f gradeMaxCom_f;
-      exact (grade (PolyMetaTransf func'1 transf f) + gradeMaxCom_f)%coq_nat. (* PolyMetaTransf *)
-  - intros func0 func1 F v_ grades_v_A_x.
-    refine (regularCardinalMax (fun A x => (grade (v_ A x) + grades_v_A_x A x)%coq_nat)). (* CoLimitator *)
-Defined.
- *)
-
-(*
-Definition gradeTotal : forall (F1 F2 : obTopos), 'Topos(0 F1 ~> F2 )0 -> nat.
-Proof.
-  move => F1 F2 f; elim : F1 F2 / f. Show Proof.
-  - intros F; refine (grade (@UnitTopos F) + (gradeMaxCom (@UnitTopos F)))%coq_nat. (* UnitTopos *)
-  - intros F2 F1 f_ F1' f'. refine (grade (f_ o>Topos f') + (gradeMaxCom (f_ o>Topos f')))%coq_nat.
-    
-  - move => ? ? v_ grade_v_ ? f' grade_f';
-             refine ((grade_v_ + (grade_f' + grade (v_ o>Topos f'))%coq_nat)%coq_nat ). (* PolyTopos *)
-  - intros; exact (O). (* View1 *)
-  - intros; exact (O). (* PolyMetaFunctor *)
-  - intros; assumption. (* PolyMetaTransf *)
-  - intros ? ? ? v_ grades_v_A_x.
-    refine (regularCardinalMax grades_v_A_x). (* CoLimitator *)
-  move => f; refine ( (grade f) + (gradeMaxCom f) )%coq_nat.
-Defined. *)
-
-
-
 (**TODO : make func'1 of PolyMetaTransf maximally implicit *)
 Module Red.
 
@@ -938,11 +768,6 @@ Module Red.
       forall F : obTopos,
       forall (v_ v_0 : forall (A : obIndexer), func0 A -> 'Topos(0 (View0 A) ~> F )0),
         (* cocone func1 f_ ->    cocone erased *)
-        (* (gradeTotal (v_0 (projT1 (regularCardinalMax_index (fun A x => gradeTotal (v_0 A x)))) (projT2 (regularCardinalMax_index (fun A x => gradeTotal (v_0 A x))))) < gradeTotal (v_ (projT1 (regularCardinalMax_index (fun A x => gradeTotal (v_ A x)))) (projT2 (regularCardinalMax_index (fun A x => gradeTotal (v_ A x))))) )%coq_nat -> *)
-(*        (forall (A : obIndexer) (x : func0 A),
-            v_0 A x <~~ v_ A x \/
-            (v_0 A x = v_ A x /\
-             exists fSol : 'Topos(0 (View0 A) ~> F )0 %sol, Sol.toTopos fSol = v_0 A x)) -> *)
         (forall (A : obIndexer) (x : func0 A), ~~ isSol.isSolbb (v_ A x) -> v_0 A x <~~ v_ A x) ->
         (forall (A : obIndexer) (x : func0 A), isSol.isSolbb (v_ A x) -> v_0 A x = v_ A x) ->
         (forall (A : obIndexer) (x : func0 A), isSol.isSolbb (v_0 A x)) ->
@@ -1056,7 +881,7 @@ of View1 *)
   Proof.
     move => F1 F2 f fDeg. elim; rewriterTopos; try eauto.
     intros.
-    apply: Top.CoLimitator_cong. intros. 
+    apply: METAFUNCTORS.CoLimitator_cong. intros. 
   Admitted.
 
   Lemma degrade :
@@ -1177,18 +1002,21 @@ Defined.
     move=> F1 F2 f; case : f => /= * ; Omega.omega.
   Qed.
 
-
-  (*
-  Lemma isSol_isRed : forall (F1 F2 : obTopos), forall (f : 'Topos(0 F1 ~> F2 )0),
-        forall fRed : 'Topos(0 F1 ~> F2 )0, (fRed <~~ f) ->
-                                       forall fSol : 'Topos(0 F1 ~> F2 )0 %sol, Sol.toTopos fSol = f ->
-                                                                           False .
+  Lemma isSolbb_isRed_False_alt : forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
+      forall fRed, fRed <~~ f ->
+              isSol.isSolbb f -> False.
   Proof.
-    intros. subst. induction fSol; try solve [inversion_clear H]. Show 3. destruct H; inversion_clear fSol; inversion_clear H0. 
-    move => F1 F2 f fRed Hred. case: F1 F2 fRed f / Hred.
-    *)
-    
-    
+    induction 1; move => //= .
+    move/isSol.regularCardinalAllP. move => J. apply: J. exists A , x. assumption.
+  Qed.
+  
+  Lemma isSolbb_isRed_False : forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
+      forall fSol : 'Topos(0 F1 ~> F2 )0 %sol,  Sol.toTopos fSol = f ->
+                                           forall fRed, fRed <~~ f -> False.
+    intros ? ? ? ? ? ? Hred. apply: (isSolbb_isRed_False_alt Hred).
+    apply: isSol.isSolbbN_isSolN. eassumption.
+  Qed.
+
 End Red.
 
 
@@ -1253,12 +1081,6 @@ Section Section1.
                (fun A0 x => gradeTotal (v_ A0 x)) transf);
     rewrite !/funcomp.
 
-  Lemma isSolbb_isRed_False : forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0),
-      forall fSol : 'Topos(0 F1 ~> F2 )0 %sol,  Sol.toTopos fSol = f ->
-                                           forall fRed, fRed <~~ f -> False.
-  Admitted.
-
-  
   Fixpoint solveTopos len {struct len} :
     forall (F1 F2 : obTopos) (f : 'Topos(0 F1 ~> F2 )0)
       (H_gradeTotal : (gradeTotal f <= len)%coq_nat),
@@ -1316,7 +1138,7 @@ Section Section1.
         set vSol_prop_ := (fun A x => projT2 (solveTopos_v_ A x)).
         set vSol_propb_ := (fun A x => ~~ ((projT2 (solveTopos_v_ A x)) : bool)).
 
-        case: (isSol.regularCardinalAllP2 (fun A x => isSol.isSolbb (v_ A x))) => H_someRed.
+        case: (isSol.regularCardinalAllP (fun A x => isSol.isSolbb (v_ A x))) => H_someRed.
         * have vSol_prop_isRed_: forall (A : obIndexer) (x : func0 A),
             ~~ isSol.isSolbb (v_ A x) ->
             Sol.toTopos (vSol_ A x) <~~ v_ A x .
@@ -1333,7 +1155,7 @@ Section Section1.
           { clear - vSol_prop_. intros A x. (case: (vSol_prop_ A x) => //= ) .
             ( case (isSol.isSolbbP2 (v_ A x)) => //= ).
             intros [v_A_x_Sol v_A_x_Sol_prop] v_A_x_Red; exfalso;
-            apply: isSolbb_isRed_False; eassumption.
+            apply: Red.isSolbb_isRed_False; eassumption.
           }
 
           exists [[ fun A x => (vSol_ A x) ]]%sol. left.
@@ -1347,7 +1169,7 @@ Section Section1.
             exists A , x . by move: E => -> . } *)
 
           have v_A_x_allSol : forall A x,  ({ fSol  | Sol.toTopos fSol = v_ A x}).
-          { intros. apply: isSol.isSolbb_toTopos.
+          { intros. apply: isSol.isSolbb_isSol.
             case E : (isSol.isSolbb _) => //=. exfalso; apply: H_someRed.
             exists A , x . by move: E => -> . }
 
@@ -1479,7 +1301,7 @@ Section Section1.
         exists ([[ f_Sol_o_f'Sol ]])%sol. left.
 
         (* now similar as the above congruence case:  f is [[ v_ @ func1 ]] *)
-        case: (isSol.regularCardinalAllP2 (fun A x => isSol.isSolbb (v_ A x))) => H_someRed.
+        case: (isSol.regularCardinalAllP (fun A x => isSol.isSolbb (v_ A x))) => H_someRed.
         * { apply: (Red.Topos_Trans (uTrans := [[ v_ ]] ));
             first by clear -f_Sol_prop f'Sol_prop; subst v_; tac_reduce.
 
@@ -1516,6 +1338,12 @@ Section Section1.
           apply: Coq.Logic.FunctionalExtensionality.functional_extensionality. intros x.
           (* here the elements (A , x) of functor are non-empty *)
           exfalso. apply: H_someRed. exists A , x. reflexivity.
-  Defined.          
+  Defined.
 
-(** Voila ! **)
+End Section1.
+
+End METAFUNCTORS.
+  
+(**#+END_SRC
+
+Voila. **)
